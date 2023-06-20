@@ -21,7 +21,7 @@ import Prelude                    (Show, Maybe (Just, Nothing), Bool (False), IO
 
 data ThreadDatum = ThreadDatum {
     mintCount :: Integer,
-    threadIdx :: Integer,   
+    threadIdx :: Integer,
     threadCount :: Integer
 } deriving Show
 unstableMakeIsData ''ThreadDatum
@@ -31,7 +31,7 @@ data ThreadInfo = ThreadInfo {
     tokenPolicy :: CurrencySymbol,
     tokenPrefix :: BuiltinByteString,
     maxSupply :: Integer
-} 
+}
 unstableMakeIsData ''ThreadInfo
 
 {-# INLINABLE threadValidator #-}
@@ -49,7 +49,7 @@ threadValidator info dtm _ ctx =
         threadValue = singleton (threadToken info) (TokenName "thread") 1
 
         returnedThreadDatum :: Maybe ThreadDatum
-        returnedThreadDatum = case find (\x -> txOutValue x PlutusTx.Prelude.== threadValue) (txInfoOutputs txInfo) of 
+        returnedThreadDatum = case find (\x -> txOutValue x == threadValue) (txInfoOutputs txInfo) of 
             Just out -> case txOutDatum out of 
                OutputDatum d -> unsafeFromBuiltinData $ getDatum d
                _           -> Nothing
@@ -58,17 +58,17 @@ threadValidator info dtm _ ctx =
         returnsThread :: Bool
         returnsThread = case returnedThreadDatum of
             Just rd ->
-                mintCount rd   PlutusTx.Prelude.== mintCount dtm PlutusTx.Prelude.+ 1 && -- 1 mint per Tx
-                threadIdx rd   PlutusTx.Prelude.== threadIdx dtm     &&
-                threadCount rd PlutusTx.Prelude.== threadCount dtm 
+                mintCount rd   == mintCount dtm + 1 && -- 1 mint per Tx
+                threadIdx rd   == threadIdx dtm     &&
+                threadCount rd == threadCount dtm 
             _       -> False
         
         belowSupply :: Bool
-        belowSupply = mintCount dtm PlutusTx.Prelude.< maxSupply info
+        belowSupply = mintCount dtm < maxSupply info
 
         mintsNFT :: Bool -- enforce 1 per Tx
         mintsNFT = valueOf (txInfoMint txInfo) (tokenPolicy info) 
-            (TokenName (appendByteString (tokenPrefix info) (intToBuiltinByteString $ mintCount dtm PlutusTx.Prelude.+ 1 ))) PlutusTx.Prelude.== 1
+            (TokenName (appendByteString (tokenPrefix info) (intToBuiltinByteString $ mintCount dtm + 1 ))) == 1
 
 {-# INLINABLE wrappedThreadValidator #-}
 wrappedThreadValidator :: BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
@@ -94,7 +94,7 @@ intToString :: Integer -> BuiltinString
 intToString i = foldr appendString "" strings
   where
     ints = intToInts i
-    strings = PlutusTx.Prelude.map intToChar ints
+    strings = map intToChar ints
 
 {-# INLINEABLE intToInts #-}
 intToInts :: Integer -> [Integer]

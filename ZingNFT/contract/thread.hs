@@ -5,7 +5,7 @@
 module Thread where
 
 import Plutus.V2.Ledger.Api   (ScriptContext (scriptContextTxInfo), TxOutRef, TxInfo (txInfoMint), txInInfoOutRef, txInfoInputs, BuiltinData, UnsafeFromData (unsafeFromBuiltinData), mkMintingPolicyScript, ToData (toBuiltinData), MintingPolicy, TokenName (unTokenName))
-import PlutusTx.Prelude       (traceIfFalse, find, map, (&&), Bool (True, False), Maybe (Nothing, Just), Eq ((==)), ($))
+import PlutusTx.Prelude       (traceIfFalse, find, map, (&&), Bool (False), Eq ((==)), ($), isJust)
 import Utilities              (wrapPolicy, writeCodeToFile)
 import PlutusTx               (compile, CompiledCode, applyCode, liftCode)
 import Plutus.V1.Ledger.Value (flattenValue)
@@ -20,9 +20,7 @@ policy ref _ ctx = traceIfFalse "Expected output was not consumed" consumesInput
         txInfo = scriptContextTxInfo ctx
 
         consumesInput :: Bool
-        consumesInput = case find (== ref) (map txInInfoOutRef (txInfoInputs txInfo)) of
-            Just _   -> True
-            Nothing  -> False
+        consumesInput = isJust $ find (== ref) (map txInInfoOutRef (txInfoInputs txInfo)) 
         
         correctName :: Bool
         correctName = case flattenValue $ txInfoMint txInfo of
@@ -34,6 +32,10 @@ policy ref _ ctx = traceIfFalse "Expected output was not consumed" consumesInput
 wrappedPolicy :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 wrappedPolicy p = wrapPolicy (policy $ unsafeFromBuiltinData p)
 
+
+
+
+{-# INLINABLE compiledPolicyCode #-}
 compiledPolicyCode :: CompiledCode(BuiltinData -> BuiltinData -> BuiltinData -> ())
 compiledPolicyCode = $$(compile [|| wrappedPolicy ||])
 
@@ -41,4 +43,4 @@ compiledPolicy :: TxOutRef -> MintingPolicy
 compiledPolicy out = mkMintingPolicyScript ($$(compile [|| wrappedPolicy ||]) `applyCode` liftCode (toBuiltinData out)) 
 
 writeToFile :: IO ()
-writeToFile = writeCodeToFile "./assets/zingnft_thread.plutus" compiledPolicyCode
+writeToFile = writeCodeToFile "./assets/thread.plutus" compiledPolicyCode
