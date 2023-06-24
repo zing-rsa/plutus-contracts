@@ -20,7 +20,6 @@ const lucid = await Lucid.new(
     'Preprod'
 )
 
-
 // thread policy
 const ThreadParamsShape = Data.Tuple(
     [Data.Bytes(), Data.Integer()]
@@ -135,6 +134,7 @@ async function deploy(threadDatum: ThreadDatum, threadInfo: ThreadInfo) {
     }
     const nftMintingPolicy = getZingBoiPolicy(nftContractInfo)
     const nftCurrencySymbol = lucid.utils.mintingPolicyToId(nftMintingPolicy);
+ 
     console.log('Generated nft currency symbol: ', nftCurrencySymbol)
 
     const completeThreadInfo: CompleteThreadInfo = {
@@ -171,6 +171,7 @@ async function deploy(threadDatum: ThreadDatum, threadInfo: ThreadInfo) {
     // Generated thread currency symbol:  e21e1fc60ba73b186def77ed2e2faca8f51db0d81f0e5a4f44b3f7b9
     // Generated nft currency symbol:  d70cf2bea7796a94814ba603b051644c8e90559eee0acf502178fbdf
     // Generated thread validator address:  addr_test1wzcncgl2e2jgh4ssyqg8lk98393ulcqstxs2u202yyrfkcqxcty5y
+    // txhash 7c47377c3ae2ebff0bbca0241c10a6895d51f4a781e38f30c55da22abf9c5c0d
 
 }
 
@@ -215,7 +216,7 @@ async function mint(threadInfo: ThreadInfo) {
     const tx = await lucid
                 .newTx()
                 .attachSpendingValidator(threadValidator)
-                .collectFrom([threadUtxo])
+                .collectFrom([threadUtxo], Data.void())
                 .attachMintingPolicy(nftMintingPolicy)
                 .mintAssets({ [nft] : 1n }, Data.void())
                 .payToContract(threadValidatorAddress, 
@@ -252,4 +253,3 @@ function main() {
 }
 
 main()
-
